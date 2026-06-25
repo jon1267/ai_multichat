@@ -47,6 +47,7 @@ new class extends Component
         </div>
     </aside>
 
-    {{-- Chatbox component   <livewire:chat-box /> --}}
+    {{-- Chatbox component --}}
+    <livewire:chat-box />
 
 </div>
