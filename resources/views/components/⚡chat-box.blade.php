@@ -5,6 +5,13 @@ use Livewire\Component;
 new class extends Component
 {
     // State
+    public string $input = '';
+
+    // Send message functional (click to Send button)
+    public function send(): void
+    {
+        dd($this->input);
+    }
 };
 ?>
 
