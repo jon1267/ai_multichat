@@ -45,6 +45,13 @@ new class extends Component {
 
         $this->loading = false;
     }
+
+    // Clear chat messages
+    public function clearChat(): void {
+        $this->messages = [];
+        $this->input = '';
+        $this->loading = false;
+    }
 };
 ?>
 
@@ -59,7 +66,7 @@ new class extends Component {
         </div>
 
         {{--Clear button--}}
-        <button
+        <button wire:click="clearChat"
             class="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer">
             Clear
         </button>
@@ -67,7 +74,7 @@ new class extends Component {
 
     <div class="flex-1 overflow-y-auto px-4 py-6 space-y-6 scroll-smooth" x-ref="messagesContainer" id="messages">
         {{-- Welcome screen --}}
-        {{--@if (count($messages) === 0)--}}
+        @if (count($messages) === 0)
         <div class="flex flex-col items-center justify-center h-full text-center py-20">
 
             <div
@@ -88,53 +95,44 @@ new class extends Component {
                 @endforeach
             </div>
         </div>
-        {{--@endif--}}
+        @endif
 
         <!-- Message lists -->
-        {{--@foreach ($messages as $index => $message)
+        @foreach ($messages as $index => $message)
             <!-- User Prompt Message -->
             @if ($message['role'] === 'user')
                 <div class="flex justify-end">
                     <div class="max-w-md lg:max-w-xl">
-                        <div
-                                class="bg-violet-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
+                        <div class="bg-violet-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
                             {{ $message['content'] }}
                         </div>
                     </div>
                 </div>
 
-                <!-- AI Response Messages -->
+           <!-- AI Response Messages -->
             @else
                 <div class="flex items-start gap-3">
 
                     <!-- AI Avatar -->
-                    <div
-                            class="w-7 h-7 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                    <div class="w-7 h-7 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
                         AI
                     </div>
 
                      <!-- If loading is there then this will render this text-->
-                    <div
-                            class="bg-zinc-800 border border-zinc-700/50 px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-zinc-100 leading-relaxed">
-                        @if ($message['streaming'] ?? false)
-                            <!-- Streaming Indicator -->
-                            <template x-if="!hasStartedStreaming">
-                                <span class="text-zinc-400">LaraChat is thinking... </span>
-                            </template>
-
-                            <span x-show="hasStartedStreaming" x-html="renderMarkdown(streamingText)"
-                                  class="markdown-body block"></span>
+                    <div class="bg-zinc-800 border border-zinc-700/50 px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-zinc-100 leading-relaxed">
+                        @if ($loading)
+                            <span> Smart Char is thinking...</span>
                         @else
                             <!-- Messages -->
                             <div class="max-w-md lg:max-w-2xl">
-                                <span class="markdown-body"
-                                      x-html="renderMarkdown(@js($message['content']))"></span>
+                                {{ $message['content'] }}
                             </div>
                         @endif
                     </div>
+
                 </div>
             @endif
-        @endforeach--}}
+        @endforeach
 
     </div>
 
@@ -147,11 +145,10 @@ new class extends Component {
             >
 
                 {{-- Textarea --}}
-                <textarea :disabled="" wire:model="input" wire:keydown.enter.prevent="send" rows="1"
-                          placeholder="Message Lara AI Chat Agent..."
-                          class="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 resize-none outline-none leading-relaxed"
-                          style="min-height: 28px; height: 28px;"
-                          x-on:input="$el.style.height='auto'; $el.style.height=Math.min($el.scrollHeight, 144) + 'px' "></textarea>
+                <textarea wire:model="input" wire:keydown.enter.prevent="send" rows="1"
+                          placeholder="Message Smart AI Chat Agent..."
+                          class="flex-1 bg-transparent text-md text-zinc-100 placeholder-zinc-500 resize-none outline-none leading-relaxed"
+                          style="min-height: 28px; height: 28px;" ></textarea>
 
                 {{-- Send button  --}}
                 <button wire:click="send" :disabled="!$wire.input.trim() "
