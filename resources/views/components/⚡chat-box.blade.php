@@ -27,13 +27,17 @@ new class extends Component {
         ];
 
         try {
-            $response = (new ChatAgent())->prompt($userMessage);
+            // $response = (new ChatAgent())->prompt($userMessage);
 
             // AI Response
             $this->messages[] = [
                 'role' => 'assistant',
-                'content' => $response->text
+                'content' => '', //'content' => $response->text
+                'streaming' => true
             ];
+
+            // Dispatch browser event to start streaming
+            $this->dispatch('start-stream', message: $userMessage)
         } catch (Throwable $e) {
             report($e);
 
@@ -55,7 +59,7 @@ new class extends Component {
 };
 ?>
 
-<div class="flex flex-1 flex-col min-w-0">
+<div class="flex flex-1 flex-col min-w-0" x-data="chatStream">
 
     {{-- Header --}}
 
@@ -167,5 +171,37 @@ new class extends Component {
 
     </div>
 
-
 </div>
+
+@script
+    <script>
+        Alpine.data('chatStream', () => ({
+            streamingText: '',
+
+            init() {
+                this.$wire.on('start-stream', ({ message }) => {
+                    this.startStream(message);
+                })
+            },
+
+            // Function start streaming
+            async startStream(message) {
+                this.streamingText = '';
+
+                const response = await fetch('{{ route('chat.stream') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/event-stream',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, // 'X-CSRF-TOKEN': '{ csrf_token() }',
+                    },
+                    body: JSON.stringify({ message: message, }),
+                });
+
+                const reader = response.body.getReader();
+
+                console.log('reader', reader);
+            }
+        }))
+    </script>
+@endscript
