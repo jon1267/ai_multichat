@@ -37,7 +37,7 @@ new class extends Component {
             ];
 
             // Dispatch browser event to start streaming
-            $this->dispatch('start-stream', message: $userMessage)
+            $this->dispatch('start-stream', message: $userMessage);
         } catch (Throwable $e) {
             report($e);
 
@@ -199,9 +199,45 @@ new class extends Component {
                 });
 
                 const reader = response.body.getReader();
+                //console.log('reader', reader);
 
-                console.log('reader', reader);
+                const decoder = new TextDecoder();
+
+                let buffer = '';
+
+                while (true) {
+                    const {done, value} = await reader.read();
+                    // console.log(done, value);
+
+                    if (done) break;
+
+                    buffer += decoder.decode(value, {stream: true});
+
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+
+                    for (const line of lines) {
+
+                        if (!line.startsWith('data: ')) {
+                            continue;
+                        }
+
+                        const data = line.slice(6).trim();
+
+                        if (data === '[DONE]') {
+                            this.$wire.dispatch('stream-complete', {
+                                content: this.streamingText,
+                            });
+
+                            return;
+                        }
+                    }
+
+
+
+                }
             }
-        }))
+        }));
     </script>
 @endscript
