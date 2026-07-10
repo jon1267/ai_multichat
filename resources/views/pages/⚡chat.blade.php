@@ -40,7 +40,7 @@ new class extends Component
         <div class="p-4 border-t border-zinc-800 space-y-2">
             <div class="flex items-center gap-2 px-2 py-2 rounded-lg bg-zinc-800/60">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-xs text-zinc-400">Gemini 2.5 Flash </span>
+                <span class="text-xs text-zinc-400">Gemini 3.5 Flash </span>
             </div>
 
             <p class="text-xs text-zinc-600 px-2">Built with Laravel 13 AI SDK </p>

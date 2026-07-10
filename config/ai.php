@@ -96,7 +96,7 @@ return [
             'driver' => 'gemini',
             'key' => env('GEMINI_API_KEY'),
             'url' => env('GEMINI_URL', 'https://generativelanguage.googleapis.com/v1beta/'),
-            //'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'), // Default model
+            // 'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'), // Default model (for July 2026 Gemini 3.5 Flash)
         ],
 
         'groq' => [

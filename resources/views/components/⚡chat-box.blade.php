@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Ai\Agents\ChatAgent;
+use Livewire\Attributes\On;
 
 new class extends Component {
     // State
@@ -54,6 +55,32 @@ new class extends Component {
     public function clearChat(): void {
         $this->messages = [];
         $this->input = '';
+        $this->loading = false;
+    }
+
+    #[On('stream-complete')]
+    public function onStreamComplete(string $content): void
+    {
+        $lastIndex = array_key_last($this->messages);
+
+        $this->messages[$lastIndex] = [
+            'role' => 'assistant',
+            'content' => $content,
+            'streaming' => false,
+        ];
+        $this->loading = false;
+    }
+
+    #[On('stream-error')]
+    public function onStreamError(): void
+    {
+        $lastIndex = array_key_last($this->messages);
+
+        $this->messages[$lastIndex] = [
+            'role' => 'assistant',
+            'content' => 'Sorry, something went wrong while streaming. Please try again.',
+            'streaming' => false,
+        ];
         $this->loading = false;
     }
 };
@@ -124,12 +151,14 @@ new class extends Component {
 
                      <!-- If loading is there then this will render this text-->
                     <div class="bg-zinc-800 border border-zinc-700/50 px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-zinc-100 leading-relaxed">
-                        @if ($loading)
-                            <span> Smart Char is thinking...</span>
+                        @if ($message['streaming'] ?? false)
+                            <span x-text="streamingText" class="whitespace-pre-wrap"></span>
                         @else
                             <!-- Messages -->
                             <div class="max-w-md lg:max-w-2xl">
-                                {{ $message['content'] }}
+                                <span class="whitespace-pre-wrap">
+                                    {{ $message['content'] }}
+                                </span>
                             </div>
                         @endif
                     </div>
@@ -188,54 +217,79 @@ new class extends Component {
             async startStream(message) {
                 this.streamingText = '';
 
-                const response = await fetch('{{ route('chat.stream') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'text/event-stream',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, // 'X-CSRF-TOKEN': '{ csrf_token() }',
-                    },
-                    body: JSON.stringify({ message: message, }),
-                });
-
-                const reader = response.body.getReader();
-                //console.log('reader', reader);
-
-                const decoder = new TextDecoder();
-
-                let buffer = '';
-
-                while (true) {
-                    const {done, value} = await reader.read();
-                    // console.log(done, value);
-
-                    if (done) break;
-
-                    buffer += decoder.decode(value, {stream: true});
-
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop();
+                try {
 
 
-                    for (const line of lines) {
+                    const response = await fetch('{{ route('chat.stream') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'text/event-stream',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, // 'X-CSRF-TOKEN': '{ csrf_token() }',
+                        },
+                        body: JSON.stringify({ message: message, }),
+                    });
 
-                        if (!line.startsWith('data: ')) {
-                            continue;
-                        }
+                    const reader = response.body.getReader();
+                    //console.log('reader', reader);
 
-                        const data = line.slice(6).trim();
+                    const decoder = new TextDecoder();
 
-                        if (data === '[DONE]') {
-                            this.$wire.dispatch('stream-complete', {
-                                content: this.streamingText,
-                            });
+                    let buffer = '';
 
-                            return;
+                    while (true) {
+                        const {done, value} = await reader.read();
+                        // console.log(done, value);
+
+                        if (done) break;
+
+                        buffer += decoder.decode(value, {stream: true});
+
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+
+                        for (const line of lines) {
+
+                            if (!line.startsWith('data: ')) {
+                                continue;
+                            }
+
+                            const data = line.slice(6).trim();
+
+                            if (data === '[DONE]') {
+                                this.$wire.dispatch('stream-complete', {
+                                    content: this.streamingText,
+                                });
+
+                                return;
+                            }
+
+                            try {
+                                const parsed = JSON.parse(data);
+
+                                if (parsed.content) {
+                                    this.streamingText += parsed.content;
+                                }
+
+                                if (parsed.error) {
+                                    this.$wire.dispatch('stream-error');
+                                    return;
+                                }
+
+                            } catch (error) {
+                                console.error('Invalid stream data:', error);
+                            }
                         }
                     }
 
+                    this.$wire.dispatch('stream-complete', {
+                        content: this.streamingText,
+                    });
 
-
+                } catch (error) {
+                    console.error(error);
+                    this.$wire.dispatch('stream-error');
                 }
             }
         }));
