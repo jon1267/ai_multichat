@@ -145,14 +145,19 @@ new class extends Component {
                 <div class="flex items-start gap-3">
 
                     <!-- AI Avatar -->
-                    <div class="w-7 h-7 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                    <div class="w-7 h-7 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">
                         AI
                     </div>
 
                      <!-- If loading is there then this will render this text-->
                     <div class="bg-zinc-800 border border-zinc-700/50 px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-zinc-100 leading-relaxed">
                         @if ($message['streaming'] ?? false)
-                            <span x-text="streamingText" class="whitespace-pre-wrap"></span>
+
+                            <template x-if="!hasStartedStreaming">
+                                <span class="text-zinc-400">SmartChat is thinking...</span>
+                            </template>
+
+                            <span x-show="hasStartedStreaming" x-text="streamingText" class="whitespace-pre-wrap"></span>
                         @else
                             <!-- Messages -->
                             <div class="max-w-md lg:max-w-2xl">
@@ -173,18 +178,19 @@ new class extends Component {
     <div class="shrink-0 px-4 pb-5 pt-3 border-t border-zinc-800 bg-zinc-900/30">
         <div class="max-w-3xl mx-auto">
 
-            <div
-                class="flex items-end gap-3 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 focus-within:border-violet-500 transition-colors duration-200"
+            <div class="flex items-end gap-3 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 focus-within:border-violet-500 transition-colors duration-200"
+                 :class="{'opacity-60' pointer-events-none: $wire.loading}"
             >
 
                 {{-- Textarea --}}
-                <textarea wire:model="input" wire:keydown.enter.prevent="send" rows="1"
+                <textarea :disabled="$wire.loading" wire:model="input" wire:keydown.enter.prevent="send" rows="1"
                           placeholder="Message Smart AI Chat Agent..."
                           class="flex-1 bg-transparent text-md text-zinc-100 placeholder-zinc-500 resize-none outline-none leading-relaxed"
-                          style="min-height: 28px; height: 28px;" ></textarea>
+                          style="min-height: 28px; height: 28px;"
+                          x-on:input="$el.style.height='auto'; $el.style.height=Math($el.scrollHeight, 144) + 'px' "></textarea>
 
-                {{-- Send button  --}}
-                <button wire:click="send" :disabled="!$wire.input.trim() "
+                {{-- Send button (disabled if input field empty, or loading state) --}}
+                <button wire:click="send" :disabled="!$wire.input.trim() || $wire.loading"
                         class="cursor-pointer shrink-0 w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled-opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5"
                          viewBox="0 0 24 24">
@@ -206,6 +212,7 @@ new class extends Component {
     <script>
         Alpine.data('chatStream', () => ({
             streamingText: '',
+            hasStartedStreaming: false,
 
             init() {
                 this.$wire.on('start-stream', ({ message }) => {
@@ -216,9 +223,9 @@ new class extends Component {
             // Function start streaming
             async startStream(message) {
                 this.streamingText = '';
+                this.hasStartedStreaming = false;
 
                 try {
-
 
                     const response = await fetch('{{ route('chat.stream') }}', {
                         method: 'POST',
@@ -269,7 +276,13 @@ new class extends Component {
                                 const parsed = JSON.parse(data);
 
                                 if (parsed.content) {
+                                    this.hasStartedStreaming = true;
                                     this.streamingText += parsed.content;
+
+                                    // Auto scroll to latest message/response
+                                    this.$nextTick(() => {
+                                        this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+                                    });
                                 }
 
                                 if (parsed.error) {
