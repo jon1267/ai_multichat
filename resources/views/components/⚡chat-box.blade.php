@@ -157,13 +157,13 @@ new class extends Component {
                                 <span class="text-zinc-400">SmartChat is thinking...</span>
                             </template>
 
-                            <span x-show="hasStartedStreaming" x-text="streamingText" class="whitespace-pre-wrap"></span>
+                            <span x-show="hasStartedStreaming" x-html="renderMarkdown(streamingText)"
+                                  class="whitespace-pre-wrap"></span>
                         @else
                             <!-- Messages -->
                             <div class="max-w-md lg:max-w-2xl">
-                                <span class="whitespace-pre-wrap">
-                                    {{ $message['content'] }}
-                                </span>
+                                <span class="whitespace-pre-wrap"
+                                      x-html="renderMarkdown(@js($message['content']))"></span>
                             </div>
                         @endif
                     </div>
@@ -210,6 +210,12 @@ new class extends Component {
 
 @script
     <script>
+
+        // Markdown
+        window.renderMarkdown = function (text) {
+            return DOMPurify.sanitize(window.marked.parse(text || ''));
+        }
+
         Alpine.data('chatStream', () => ({
             streamingText: '',
             hasStartedStreaming: false,

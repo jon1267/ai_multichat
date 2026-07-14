@@ -8,6 +8,12 @@
 
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        <!-- Marked js cdn (cdn url was edited) -->
+        <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js"></script>
+
+        <!-- Dompurify cdn (url was not edited) -->
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.12/dist/purify.min.js"></script>
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @livewireStyles
