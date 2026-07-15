@@ -158,11 +158,11 @@ new class extends Component {
                             </template>
 
                             <span x-show="hasStartedStreaming" x-html="renderMarkdown(streamingText)"
-                                  class="whitespace-pre-wrap"></span>
+                                  class="markdown-body code-block"></span>
                         @else
                             <!-- Messages -->
                             <div class="max-w-md lg:max-w-2xl">
-                                <span class="whitespace-pre-wrap"
+                                <span class="markdown-body"
                                       x-html="renderMarkdown(@js($message['content']))"></span>
                             </div>
                         @endif
@@ -207,6 +207,64 @@ new class extends Component {
     </div>
 
 </div>
+
+<style>
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3 {
+        font-weight: 600;
+        margin: 0.75rem 0 0.5rem;
+        color: #fff;
+    }
+
+    .markdown-body p {
+        margin: 0.5rem 0;
+    }
+
+    .markdown-body ul,
+    .markdown-body ol {
+        margin: 0.5rem 0;
+        padding-left: 1.25rem;
+    }
+
+    .markdown-body ul {
+        list-style-type: disc;
+    }
+
+    .markdown-body ol {
+        list-style-type: decimal;
+    }
+
+    .markdown-body strong {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .markdown-body code {
+        /*background: rgb(39 39 42);*/
+        background: #09090b;
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    .markdown-body .code-block pre, pre {
+        margin: 0;
+        padding: 0;
+        background: #09090b;
+        overflow-x: auto;
+    }
+
+    .markdown-body .code-block pre code {
+        background: transparent;
+        padding: 1rem;
+        border-radius: 0;
+        display: block;
+        line-height: 1.6;
+        white-space: pre;
+        font-size: 0.875rem;
+    }
+</style>
 
 @script
     <script>
